@@ -1,0 +1,31 @@
+# MacOS generated files
+.DS_Store
+
+# Node modules (if any node related operations)
+node_modules
+
+# Logs
+*.log
+*.log.*
+
+# Temporary files created by editors
+*~
+*.swp
+*.swo
+*.bak
+
+# Files created by some editors (e.g. Sublime Text)
+*.sublime-workspace
+*.sublime-project
+
+# Files created by JetBrains IDEs
+.idea/
+
+# Other system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+tmp/
+temp/
