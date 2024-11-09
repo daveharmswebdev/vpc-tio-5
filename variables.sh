@@ -9,6 +9,8 @@ export IGW_NAME="gl-igw"
 export PUBLIC_RT_NAME="PublicRT"
 export PUBLIC_SG_NAME="PublicSG"
 export PRIVATE_SG_NAME="PrivateSG"
+export PUBLIC_EC2_INSTANCE_NAME="PublicInstance"
+export PRIVATE_EC2_INSTANCE_NAME="PrivateInstance"
 
 # cidr blocks
 export VPC_CIDR="10.0.0.0/16"
