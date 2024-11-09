@@ -64,5 +64,25 @@ echo "internet gateway ${IGW_ID} attached to vpc ${VPC_ID}"
 echo "creating public route table"
 PUBLIC_RT_ID=$(aws ec2 create-route-table \
   --vpc-id "$VPC_ID" \
-  --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=${PUBLIC_RT_NAME}}]")
+  --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=${PUBLIC_RT_NAME}}]" \
+  --query 'RouteTable.RouteTableId' \
+  --output text)
 echo "Public Route Table created: ${PUBLIC_RT_ID}"
+
+# add route to IGW in public route table
+echo "Creating route to internet gateway in public route table..."
+aws ec2 create-route \
+  --route-table-id "$PUBLIC_RT_ID" \
+  --destination-cidr-block 0.0.0.0/0 \
+  --gateway-id "$IGW_ID"
+echo "Route to Internet Gateway created in public route table: ${PUBLIC_RT_ID}"
+
+# associate public subnet with public route table
+echo "Associating public subnet with public route table"
+PUBLIC_RT_ASSOC_ID=$(aws ec2 associate-route-table \
+  --subnet-id "$PUBLIC_SUBNET_ID" \
+  --route-table-id "$PUBLIC_RT_ID" \
+  --query 'AssociationId' \
+  --output text)
+echo "Public subnet ${PUBLIC_SUBNET_ID} associated with Public Route Table ${PUBLIC_RT_ID}: ${PUBLIC_RT_ASSOC_ID}"
+

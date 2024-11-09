@@ -21,23 +21,86 @@ chmod +x test.sh
 ```bash
 ❯ ./set-up.sh
 Creating VPC...
-Created vpc with vpc id: vpc-084f2ea31d3bd3d7c
-Enabling DNS hostnames for VPC: vpc-084f2ea31d3bd3d7c
-DNS hostnames enabled for VPC: vpc-084f2ea31d3bd3d7c
+Created vpc with vpc id: vpc-0f1d8810f59dd6611
+Enabling DNS hostnames for VPC: vpc-0f1d8810f59dd6611
+DNS hostnames enabled for VPC: vpc-0f1d8810f59dd6611
 Creating public subnet...
-Public Subnet created: subnet-0f270e3a6f9399be9
+Public Subnet created: subnet-0a5b814ea9334c3ee
 Creating private subnet...
-Private Subnet created: subnet-01efaa8d6863d95ad
+Private Subnet created: subnet-0719f89a5c1691606
 creating internet gateway
-Internet Gateway created: igw-0f09271a8546c8ae8
-attaching internet gateway igw-0f09271a8546c8ae8 to vpc vpc-084f2ea31d3bd3d7c
-internet gateway igw-0f09271a8546c8ae8 attached to vpc vpc-084f2ea31d3bd3d7c
+Internet Gateway created: igw-0e0d890f67e638d22
+attaching internet gateway igw-0e0d890f67e638d22 to vpc vpc-0f1d8810f59dd6611
+internet gateway igw-0e0d890f67e638d22 attached to vpc vpc-0f1d8810f59dd6611
 creating public route table
-Public Route Table created: {
+Public Route Table created: rtb-0a6631be826cf8f1c
+Creating route to internet gateway in public route table...
+Route to Internet Gateway created in public route table: rtb-0a6631be826cf8f1c
+Associating public subnet with public route table
+Public subnet subnet-0a5b814ea9334c3ee associated with Public Route Table rtb-0a6631be826cf8f1c: rtbassoc-0d3d859d41829f800
+```
+
+### Tear down printout:
+```bash
+❯ ./tear-down.sh
+Starting teardown process...
+Found VPC: vpc-0f1d8810f59dd6611
+Found Public Subnet: subnet-0a5b814ea9334c3ee
+Found Private Subnet: subnet-0719f89a5c1691606
+Found Internet Gateway: igw-0e0d890f67e638d22
+Found Public Route Table: rtb-0a6631be826cf8f1c
+Deleting public route table association: rtbassoc-0d3d859d41829f800
+Deleted 
+Deleting public route table rtb-0a6631be826cf8f1c
+Deleted public route table rtb-0a6631be826cf8f1c
+Detaching Internet Gateway: igw-0e0d890f67e638d22
+Deleting Internet Gateway: igw-0e0d890f67e638d22
+Internet Gateway deleted: igw-0e0d890f67e638d22
+Deleting subnets...
+Deleting Private Subnet: subnet-0719f89a5c1691606
+Private Subnet deleted: subnet-0719f89a5c1691606
+Deleting Public Subnet: subnet-0a5b814ea9334c3ee
+Public Subnet deleted: subnet-0a5b814ea9334c3ee
+Getting vpc id for gl-vpc
+Deleting vpc: gl-vpc with id: vpc-0f1d8810f59dd6611
+Vpc deleted
+```
+
+### Mistakes that I learned from
+
+This was wrong.  Because it was assigning an object to my variable: PUBLIC_RT_ID
+
+```bash
+# create public route table
+echo "creating public route table"
+PUBLIC_RT_ID=$(aws ec2 create-route-table \
+  --vpc-id "$VPC_ID" \
+  --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=${PUBLIC_RT_NAME}}]")
+echo "Public Route Table created: ${PUBLIC_RT_ID}"
+```
+
+And when I was trying to create a route in my route table, I was passing the object and not the id to the command.  And an error would be generated.
+
+Correction:
+
+```bash
+echo "creating public route table"
+PUBLIC_RT_ID=$(aws ec2 create-route-table \
+  --vpc-id "$VPC_ID" \
+  --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=${PUBLIC_RT_NAME}}]" \
+  --query 'RouteTable.RouteTableId' \
+  --output text)
+echo "Public Route Table created: ${PUBLIC_RT_ID}"
+```
+
+What's going on here is that we create the route table but we drill into the json object:
+
+```json
+{
     "RouteTable": {
         "Associations": [],
         "PropagatingVgws": [],
-        "RouteTableId": "rtb-05e582794ce99d97d",
+        "RouteTableId": "rtb-0f77f71e87d1fbbb2",
         "Routes": [
             {
                 "DestinationCidrBlock": "10.0.0.0/16",
@@ -52,39 +115,14 @@ Public Route Table created: {
                 "Value": "PublicRT"
             }
         ],
-        "VpcId": "vpc-084f2ea31d3bd3d7c",
+        "VpcId": "vpc-0582a156c922d9305",
         "OwnerId": "417355468534"
     },
-    "ClientToken": "278424e7-a26b-4484-819a-7a57e0bd031a"
+    "ClientToken": "49936469-2182-415c-b336-82c90758b3f8"
 }
-
 ```
 
-### Tear down printout:
-```bash
-❯ ./tear-down.sh
-Starting teardown process...
-Found VPC: vpc-084f2ea31d3bd3d7c
-Found Public Subnet: subnet-0f270e3a6f9399be9
-Found Private Subnet: subnet-01efaa8d6863d95ad
-Found Internet Gateway: igw-0f09271a8546c8ae8
-Found Public Route Table: rtb-05e582794ce99d97d
-Deleting public route table rtb-05e582794ce99d97d
-Deleted public route table rtb-05e582794ce99d97d
-Detaching Internet Gateway: igw-0f09271a8546c8ae8
-Deleting Internet Gateway: igw-0f09271a8546c8ae8
-Internet Gateway deleted: igw-0f09271a8546c8ae8
-Deleting subnets...
-Deleting Private Subnet: subnet-01efaa8d6863d95ad
-Private Subnet deleted: subnet-01efaa8d6863d95ad
-Deleting Public Subnet: subnet-0f270e3a6f9399be9
-Public Subnet deleted: subnet-0f270e3a6f9399be9
-Getting vpc id for gl-vpc
-Deleting vpc: gl-vpc with id: vpc-084f2ea31d3bd3d7c
-Vpc deleted
-
-```
-
+to get the RouteTableId and return it as text to the variable.
 
 ### Final Thoughts:
 This was incredibly tedious.  This is the exact reason Terraform was created.
