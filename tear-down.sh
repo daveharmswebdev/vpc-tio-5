@@ -33,6 +33,17 @@ PUBLIC_RT_ID=$(get_resource_id route-table $PUBLIC_RT_NAME "RouteTables[0].Route
 echo "Found Public Route Table: ${PUBLIC_RT_ID}"
 
 # removing resources
+
+# delete route table association and routes
+PUBLIC_RT_ASSOC_ID=$(aws ec2 describe-route-tables \
+  --route-table-id "${PUBLIC_RT_ID}" \
+  --query 'RouteTables[0].Associations[0].RouteTableAssociationId' \
+  --output text)
+echo "Deleting public route table association: ${PUBLIC_RT_ASSOC_ID}"
+aws ec2 disassociate-route-table --association-id "${PUBLIC_RT_ASSOC_ID}"
+echo "Deleted ${PRIVATE_RT_ASSOC_ID}"
+
+# Deleting public route table
 if [ -n "$PUBLIC_RT_ID" ] && [ "$PUBLIC_RT_ID" != "None" ]; then
     echo "Deleting public route table ${PUBLIC_RT_ID}"
     aws ec2 delete-route-table --route-table-id "${PUBLIC_RT_ID}"
