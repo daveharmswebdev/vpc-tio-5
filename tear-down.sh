@@ -32,7 +32,37 @@ echo "Found Internet Gateway: ${IGW_ID}"
 PUBLIC_RT_ID=$(get_resource_id route-table $PUBLIC_RT_NAME "RouteTables[0].RouteTableId")
 echo "Found Public Route Table: ${PUBLIC_RT_ID}"
 
+# Get Security Group IDs
+PUBLIC_SG_ID=$(aws ec2 describe-security-groups \
+    --filters "Name=group-name,Values=${PUBLIC_SG_NAME}" \
+    --query 'SecurityGroups[0].GroupId' \
+    --output text)
+echo "Found Public Security Group: ${PUBLIC_SG_ID}"
+
 # removing resources
+
+# Terminate EC2 instances
+echo "Terminating EC2 instances..."
+INSTANCE_IDS=$(aws ec2 describe-instances \
+    --filters "Name=vpc-id,Values=${VPC_ID}" "Name=instance-state-name,Values=running,stopped" \
+    --query 'Reservations[].Instances[].InstanceId' \
+    --output text)
+
+if [ -n "$INSTANCE_IDS" ]; then
+    echo "Terminating EC2 instances: ${INSTANCE_IDS}"
+    aws ec2 terminate-instances --instance-ids "${INSTANCE_IDS}"
+    echo "Waiting for instances to terminate..."
+    aws ec2 wait instance-terminated --instance-ids" ${INSTANCE_IDS}"
+    echo "EC2 instances terminated: ${INSTANCE_IDS}"
+fi
+
+# Delete Security Groups
+echo "Deleting security groups..."
+if [ -n "$PUBLIC_SG_ID" ] && [ "$PUBLIC_SG_ID" != "None" ]; then
+    echo "Deleting Public Security Group: ${PUBLIC_SG_ID}"
+    aws ec2 delete-security-group --group-id "${PUBLIC_SG_ID}"
+    echo "Public Security Group deleted: ${PUBLIC_SG_ID}"
+fi
 
 # delete route table association and routes
 PUBLIC_RT_ASSOC_ID=$(aws ec2 describe-route-tables \
