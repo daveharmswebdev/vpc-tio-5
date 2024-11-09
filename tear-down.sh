@@ -39,6 +39,12 @@ PUBLIC_SG_ID=$(aws ec2 describe-security-groups \
     --output text)
 echo "Found Public Security Group: ${PUBLIC_SG_ID}"
 
+PRIVATE_SG_ID=$(aws ec2 describe-security-groups \
+    --filters "Name=group-name,Values=${PRIVATE_SG_NAME}" \
+    --query 'SecurityGroups[0].GroupId' \
+    --output text)
+echo "Found Private Security Group: ${PRIVATE_SG_ID}"
+
 # removing resources
 
 # Terminate EC2 instances
@@ -50,9 +56,9 @@ INSTANCE_IDS=$(aws ec2 describe-instances \
 
 if [ -n "$INSTANCE_IDS" ]; then
     echo "Terminating EC2 instances: ${INSTANCE_IDS}"
-    aws ec2 terminate-instances --instance-ids "${INSTANCE_IDS}"
+    aws ec2 terminate-instances --instance-ids $(echo $INSTANCE_IDS)
     echo "Waiting for instances to terminate..."
-    aws ec2 wait instance-terminated --instance-ids" ${INSTANCE_IDS}"
+    aws ec2 wait instance-terminated --instance-ids $(echo $INSTANCE_IDS)
     echo "EC2 instances terminated: ${INSTANCE_IDS}"
 fi
 
@@ -62,6 +68,12 @@ if [ -n "$PUBLIC_SG_ID" ] && [ "$PUBLIC_SG_ID" != "None" ]; then
     echo "Deleting Public Security Group: ${PUBLIC_SG_ID}"
     aws ec2 delete-security-group --group-id "${PUBLIC_SG_ID}"
     echo "Public Security Group deleted: ${PUBLIC_SG_ID}"
+fi
+
+if [ -n "$PRIVATE_SG_ID" ] && [ "$PRIVATE_SG_ID" != "None" ]; then
+    echo "Deleting Private Security Group: ${PRIVATE_SG_ID}"
+    aws ec2 delete-security-group --group-id "${PRIVATE_SG_ID}"
+    echo "Private Security Group deleted: ${PRIVATE_SG_ID}"
 fi
 
 # delete route table association and routes

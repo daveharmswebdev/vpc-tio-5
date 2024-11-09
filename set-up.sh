@@ -132,8 +132,50 @@ PUBLIC_INSTANCE_ID=$(aws ec2 run-instances \
     --subnet-id "$PUBLIC_SUBNET_ID" \
     --associate-public-ip-address \
     --user-data file://public-user-data.sh \
-    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=PublicInstance}]' \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${PUBLIC_EC2_INSTANCE_NAME}}]" \
     --query 'Instances[0].InstanceId' \
     --output text)
 echo "Public EC2 instance launched: ${PUBLIC_INSTANCE_ID}"
 
+# create security group for private ec2 instance
+echo "Creating Security Group for private instances..."
+PRIVATE_SG_ID=$(aws ec2 create-security-group \
+    --group-name "$PRIVATE_SG_NAME" \
+    --description "Opens security groups for ssh and icmp only from the public subnet" \
+    --vpc-id "$VPC_ID" \
+    --query 'GroupId' \
+    --output text)
+echo "Private Security Group created: ${PRIVATE_SG_ID}"
+
+# Allow SSH from the public subnet to private instances
+echo "Adding SSH inbound rule to Private Security Group..."
+aws ec2 authorize-security-group-ingress \
+    --group-id "$PRIVATE_SG_ID" \
+    --protocol tcp \
+    --port 22 \
+    --cidr "${PUBLIC_SUBNET_CIDR}"
+echo "SSH inbound rule added to Private Security Group: ${PRIVATE_SG_ID}"
+
+# Allow ICMP (Ping) from the public subnet to private instances
+echo "Adding ICMP inbound rule to Private Security Group..."
+aws ec2 authorize-security-group-ingress \
+    --group-id "$PRIVATE_SG_ID" \
+    --protocol icmp \
+    --port -1 \
+    --cidr "${PUBLIC_SUBNET_CIDR}"
+echo "ICMP inbound rule added to Private Security Group: ${PRIVATE_SG_ID}"
+
+# Launch an EC2 instance in the Private Subnet
+echo "Launching EC2 instance in private subnet..."
+PRIVATE_INSTANCE_ID=$(aws ec2 run-instances \
+    --image-id "${AMI_ID}" \
+    --count 1 \
+    --instance-type t2.micro \
+    --key-name "${KEY_PAIR_NAME}" \
+    --security-group-ids "$PRIVATE_SG_ID" \
+    --subnet-id "$PRIVATE_SUBNET_ID" \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${PRIVATE_EC2_INSTANCE_NAME}}]" \
+    --associate-public-ip-address \
+    --query 'Instances[0].InstanceId' \
+    --output text)
+echo "Private EC2 instance launched: ${PRIVATE_INSTANCE_ID}"
