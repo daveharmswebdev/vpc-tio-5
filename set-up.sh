@@ -2,6 +2,14 @@
 
 source ./variables.sh
 
+# config.env is a private gitignored file that is used to store your own ip address
+if [ -f "config.env" ]; then
+    source config.env
+else
+    echo "Missing config.env file. Please create it with your public IP."
+    exit 1
+fi
+
 # Verify required variables are set
 if [ -z "$VPC_NAME" ] || [ -z "$AWS_REGION" ]; then
     echo "Error: Required variables are not set. Please check variables.sh"
@@ -85,4 +93,47 @@ PUBLIC_RT_ASSOC_ID=$(aws ec2 associate-route-table \
   --query 'AssociationId' \
   --output text)
 echo "Public subnet ${PUBLIC_SUBNET_ID} associated with Public Route Table ${PUBLIC_RT_ID}: ${PUBLIC_RT_ASSOC_ID}"
+
+
+# create security group for public instances
+PUBLIC_SG_ID=$(aws ec2 create-security-group \
+    --group-name "$PUBLIC_SG_NAME" \
+    --description "Security group for public instances" \
+    --vpc-id "$VPC_ID" \
+    --query 'GroupId' \
+    --output text)
+echo "Public Security Group created: ${PUBLIC_SG_ID}"
+
+# Allow inbound SSH to public instances
+echo "Adding SSH inbound rule to Public Security Group..."
+aws ec2 authorize-security-group-ingress \
+    --group-id "$PUBLIC_SG_ID" \
+    --protocol tcp \
+    --port 22 \
+    --cidr "${MY_IP}/32"
+echo "SSH inbound rule added to Public Security Group: ${PUBLIC_SG_ID}"
+
+echo "Adding HTTP inbound rule to Public Security Group..."
+aws ec2 authorize-security-group-ingress \
+    --group-id "$PUBLIC_SG_ID" \
+    --protocol tcp \
+    --port 80 \
+    --cidr 0.0.0.0/0
+echo "HTTP inbound rule added to Public Security Group: ${PUBLIC_SG_ID}"
+
+# Launch EC2 instance in public subnet
+echo "Launching EC2 instance in public subnet..."
+PUBLIC_INSTANCE_ID=$(aws ec2 run-instances \
+    --image-id "${AMI_ID}" \
+    --count 1 \
+    --instance-type t2.micro \
+    --key-name "${KEY_PAIR_NAME}" \
+    --security-group-ids "$PUBLIC_SG_ID" \
+    --subnet-id "$PUBLIC_SUBNET_ID" \
+    --associate-public-ip-address \
+    --user-data file://public-user-data.sh \
+    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=PublicInstance}]' \
+    --query 'Instances[0].InstanceId' \
+    --output text)
+echo "Public EC2 instance launched: ${PUBLIC_INSTANCE_ID}"
 

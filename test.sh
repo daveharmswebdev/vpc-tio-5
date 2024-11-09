@@ -2,6 +2,15 @@
 
 source ./variables.sh
 
+
+if [ -f "config.env" ]; then
+    source config.env
+    echo "Here is your ip address: ${MY_IP}"
+else
+    echo "Missing config.env file. Please create it with your public IP."
+    exit 1
+fi
+
 # Function to get resource ID by tag name
 get_resource_id() {
     local resource_type=$1
@@ -29,3 +38,10 @@ echo "Found Internet Gateway: ${IGW_ID}"
 
 PUBLIC_RT_ID=$(get_resource_id route-table $PUBLIC_RT_NAME "RouteTables[0].RouteTableId")
 echo "Found Public Route Table: ${PUBLIC_RT_ID}"
+
+echo "Terminating EC2 instances..."
+INSTANCE_IDS=$(aws ec2 describe-instances \
+    --filters "Name=vpc-id,Values=${VPC_ID}" "Name=instance-state-name,Values=running,stopped" \
+    --query 'Reservations[].Instances[].InstanceId' \
+    --output text)
+echo "EC2 ids: ${INSTANCE_IDS}"
