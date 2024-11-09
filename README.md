@@ -18,7 +18,7 @@ chmod +x test.sh
 
 ### Setup Printout:
 
-```bashsupport pro zsh
+```bash
 ❯ ./set-up.sh
 Creating VPC...
 Created vpc with vpc id: vpc-084f2ea31d3bd3d7c
@@ -61,7 +61,7 @@ Public Route Table created: {
 ```
 
 ### Tear down printout:
-```bashsupport pro zsh
+```bash
 ❯ ./tear-down.sh
 Starting teardown process...
 Found VPC: vpc-084f2ea31d3bd3d7c
