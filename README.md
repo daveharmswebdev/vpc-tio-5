@@ -16,3 +16,13 @@ Each script will have to modified to be made an executable.  For example:
 chmod +x test.sh
 ```
 
+### Final Thoughts:
+This was incredibly tedious.  This is the exact reason Terraform was created.
+However, this is certainly better then using the console or executing one line at a time.
+
+Its tedious to
++ Constantly check in the UI what resources have been created and what has been deleted
++ To develop without reliable code complete (Terraform has that).
++ Write your own tear down script (Terraform has a command for that).
+
+But this was a good exercise.  Will never do this on the job though.  

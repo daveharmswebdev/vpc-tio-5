@@ -44,3 +44,18 @@ PRIVATE_SUBNET_ID=$(aws ec2 create-subnet \
     --query 'Subnet.SubnetId' \
     --output text)
 echo "Private Subnet created: ${PRIVATE_SUBNET_ID}"
+
+# create internet gateway
+echo "creating internet gateway"
+IGW_ID=$(aws ec2 create-internet-gateway \
+  --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=${IGW_NAME}}]" \
+  --query 'InternetGateway.InternetGatewayId' \
+  --output text)
+echo "Internet Gateway created: ${IGW_ID}"
+
+# attach internet gateway to vpc
+echo "attaching internet gateway ${IGW_ID} to vpc ${VPC_ID}"
+aws ec2 attach-internet-gateway \
+  --vpc-id $VPC_ID \
+  --internet-gateway-id $IGW_ID
+echo "internet gateway ${IGW_ID} attached to vpc ${VPC_ID}"
