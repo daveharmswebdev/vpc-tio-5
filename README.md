@@ -20,50 +20,105 @@ chmod +x test.sh
 
 ```bash
 ❯ ./set-up.sh
+
 Creating VPC...
-Created vpc with vpc id: vpc-0f1d8810f59dd6611
-Enabling DNS hostnames for VPC: vpc-0f1d8810f59dd6611
-DNS hostnames enabled for VPC: vpc-0f1d8810f59dd6611
+Created vpc with vpc id: vpc-0a9572e5a79623e94
+Enabling DNS hostnames for VPC: vpc-0a9572e5a79623e94
+DNS hostnames enabled for VPC: vpc-0a9572e5a79623e94
 Creating public subnet...
-Public Subnet created: subnet-0a5b814ea9334c3ee
+Public Subnet created: subnet-00365c44cdd14310e
 Creating private subnet...
-Private Subnet created: subnet-0719f89a5c1691606
+Private Subnet created: subnet-0c964548a2d6a32ae
 creating internet gateway
-Internet Gateway created: igw-0e0d890f67e638d22
-attaching internet gateway igw-0e0d890f67e638d22 to vpc vpc-0f1d8810f59dd6611
-internet gateway igw-0e0d890f67e638d22 attached to vpc vpc-0f1d8810f59dd6611
+Internet Gateway created: igw-083907608657e3c85
+attaching internet gateway igw-083907608657e3c85 to vpc vpc-0a9572e5a79623e94
+internet gateway igw-083907608657e3c85 attached to vpc vpc-0a9572e5a79623e94
 creating public route table
-Public Route Table created: rtb-0a6631be826cf8f1c
+Public Route Table created: rtb-019a70fb88ef05a1f
+creating private route table
+Private Route Table created: rtb-05636d9ef9a3421f6
 Creating route to internet gateway in public route table...
-Route to Internet Gateway created in public route table: rtb-0a6631be826cf8f1c
+Route to Internet Gateway created in public route table: rtb-019a70fb88ef05a1f
 Associating public subnet with public route table
-Public subnet subnet-0a5b814ea9334c3ee associated with Public Route Table rtb-0a6631be826cf8f1c: rtbassoc-0d3d859d41829f800
+Public subnet subnet-00365c44cdd14310e associated with Public Route Table rtb-019a70fb88ef05a1f: rtbassoc-0831e2ac59fa9ac3e
+allocating elastic ip for NAT gateway...
+Elastic ip allocated with Allocation Id: eipalloc-016b30ff2bb1371fa
+Creating NAT Gateway in public subnet...
+Waiting for NAT Gateway to become available...
+NAT Gateway created: nat-024fa905f8b8080c9
+Tagging NAT Gateway...
+NAT Gateway tagged: nat-024fa905f8b8080c9
+Adding route to private route table to use NAT Gateway...
+Route added to Private Route Table: rtb-05636d9ef9a3421f6 for NAT Gateway: nat-024fa905f8b8080c9
+Associating private subnet with private route table...
+Private subnet subnet-0c964548a2d6a32ae associated with Private Route Table rtb-05636d9ef9a3421f6: rtbassoc-04037bf3b1e1baf4b
+Public Security Group created: sg-002b3547855575fa4
+Adding SSH inbound rule to Public Security Group...
+SSH inbound rule added to Public Security Group: sg-002b3547855575fa4
+Adding HTTP inbound rule to Public Security Group...
+HTTP inbound rule added to Public Security Group: sg-002b3547855575fa4
+Launching EC2 instance in public subnet...
+Public EC2 instance launched: i-0d2d00f263aeb437c
+Creating Security Group for private instances...
+Private Security Group created: sg-05c194b90a6a1b266
+Adding SSH inbound rule to Private Security Group...
+SSH inbound rule added to Private Security Group: sg-05c194b90a6a1b266
+Adding ICMP inbound rule to Private Security Group...
+ICMP inbound rule added to Private Security Group: sg-05c194b90a6a1b266
+Launching EC2 instance in private subnet...
+Private EC2 instance launched: i-05a51c6b350c191d2
 ```
 
 ### Tear down printout:
 ```bash
 ❯ ./tear-down.sh
 Starting teardown process...
-Found VPC: vpc-0f1d8810f59dd6611
-Found Public Subnet: subnet-0a5b814ea9334c3ee
-Found Private Subnet: subnet-0719f89a5c1691606
-Found Internet Gateway: igw-0e0d890f67e638d22
-Found Public Route Table: rtb-0a6631be826cf8f1c
-Deleting public route table association: rtbassoc-0d3d859d41829f800
-Deleted 
-Deleting public route table rtb-0a6631be826cf8f1c
-Deleted public route table rtb-0a6631be826cf8f1c
-Detaching Internet Gateway: igw-0e0d890f67e638d22
-Deleting Internet Gateway: igw-0e0d890f67e638d22
-Internet Gateway deleted: igw-0e0d890f67e638d22
+Found VPC: vpc-0a9572e5a79623e94
+Found Public Subnet: subnet-00365c44cdd14310e
+Found Private Subnet: subnet-0c964548a2d6a32ae
+Found Internet Gateway: igw-083907608657e3c85
+Found Public Route Table: rtb-019a70fb88ef05a1f
+Found Private Route Table: rtb-05636d9ef9a3421f6
+Found Public Security Group: sg-002b3547855575fa4
+Found Private Security Group: sg-05c194b90a6a1b266
+Found NAT Gateway: nat-024fa905f8b8080c9
+Found Elastic IP Allocation ID: None
+Terminating EC2 instances...
+Terminating EC2 instances: i-0d2d00f263aeb437c  i-05a51c6b350c191d2
+Waiting for instances to terminate...
+EC2 instances terminated: i-0d2d00f263aeb437c   i-05a51c6b350c191d2
+Deleting security groups...
+Deleting Public Security Group: sg-002b3547855575fa4
+Public Security Group deleted: sg-002b3547855575fa4
+Deleting Private Security Group: sg-05c194b90a6a1b266
+Private Security Group deleted: sg-05c194b90a6a1b266
+Deleting NAT Gateway: nat-024fa905f8b8080c9
+Waiting for NAT Gateway to be deleted...
+NAT Gateway deleted: nat-024fa905f8b8080c9
+Releasing Elastic IP: None
+Elastic IP released: None
+Deleting route table associations and route tables...
+Disassociating public route table: rtbassoc-0831e2ac59fa9ac3e
+Public route table disassociated 
+Disassociating Private Route Table: rtbassoc-04037bf3b1e1baf4b
+Private Route Table disassociated: rtbassoc-04037bf3b1e1baf4b
+Deleting public route table rtb-019a70fb88ef05a1f
+Deleted public route table rtb-019a70fb88ef05a1f
+Deleting Private Route Table: rtb-05636d9ef9a3421f6
+Deleted Private Route Table: rtb-05636d9ef9a3421f6
+Detaching Internet Gateway: igw-083907608657e3c85
+Deleting Internet Gateway: igw-083907608657e3c85
+Internet Gateway deleted: igw-083907608657e3c85
 Deleting subnets...
-Deleting Private Subnet: subnet-0719f89a5c1691606
-Private Subnet deleted: subnet-0719f89a5c1691606
-Deleting Public Subnet: subnet-0a5b814ea9334c3ee
-Public Subnet deleted: subnet-0a5b814ea9334c3ee
+Deleting Private Subnet: subnet-0c964548a2d6a32ae
+Private Subnet deleted: subnet-0c964548a2d6a32ae
+Deleting Public Subnet: subnet-00365c44cdd14310e
+Public Subnet deleted: subnet-00365c44cdd14310e
 Getting vpc id for gl-vpc
-Deleting vpc: gl-vpc with id: vpc-0f1d8810f59dd6611
+Deleting vpc: gl-vpc with id: vpc-0a9572e5a79623e94
 Vpc deleted
+
+
 ```
 
 ### Mistakes that I learned from
@@ -123,6 +178,151 @@ What's going on here is that we create the route table but we drill into the jso
 ```
 
 to get the RouteTableId and return it as text to the variable.
+
+### Proof of NatGateway Success
+
+```bash
+❯ scp -i liftshift.pem ./liftshift.pem ec2-user@ec2-3-93-168-247.compute-1.amazonaws.com:/home/ec2-user/liftshift.pem
+❯ ssh -i "liftshift.pem" ec2-user@ec2-54-162-148-78.compute-1.amazonaws.com
+The authenticity of host 'ec2-54-162-148-78.compute-1.amazonaws.com (54.162.148.78)' can't be established.
+ED25519 key fingerprint is SHA256:XkA0OZjj81qu6Muky+U/3cV/cTlni6ueHmRXLyWW1zM.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added 'ec2-54-162-148-78.compute-1.amazonaws.com' (ED25519) to the list of known hosts.
+   ,     #_
+   ~\_  ####_        Amazon Linux 2
+  ~~  \_#####\
+  ~~     \###|       AL2 End of Life is 2025-06-30.
+  ~~       \#/ ___
+   ~~       V~' '->
+    ~~~         /    A newer version of Amazon Linux is available!
+      ~~._.   _/
+         _/ _/       Amazon Linux 2023, GA and supported until 2028-03-15.
+       _/m/'           https://aws.amazon.com/linux/amazon-linux-2023/
+
+[ec2-user@ip-10-0-1-229 ~]$ exit
+logout
+Connection to ec2-54-162-148-78.compute-1.amazonaws.com closed.
+❯ scp -i liftshift.pem ./liftshift.pem ec2-54-162-148-78.compute-1.amazonaws.com:/home/ec2-user/liftshift.pem
+walterharms@ec2-54-162-148-78.compute-1.amazonaws.com: Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+scp: Connection closed
+❯ ssh -i "liftshift.pem" ec2-user@ec2-54-162-148-78.compute-1.amazonaws.com
+Last login: Sat Nov  9 22:41:29 2024 from 69.226.237.216
+   ,     #_
+   ~\_  ####_        Amazon Linux 2
+  ~~  \_#####\
+  ~~     \###|       AL2 End of Life is 2025-06-30.
+  ~~       \#/ ___
+   ~~       V~' '->
+    ~~~         /    A newer version of Amazon Linux is available!
+      ~~._.   _/
+         _/ _/       Amazon Linux 2023, GA and supported until 2028-03-15.
+       _/m/'           https://aws.amazon.com/linux/amazon-linux-2023/
+
+[ec2-user@ip-10-0-1-229 ~]$ exit
+logout
+Connection to ec2-54-162-148-78.compute-1.amazonaws.com closed.
+❯ scp -i liftshift.pem ./liftshift.pem ec2-user@ec2-54-162-148-78.compute-1.amazonaws.com:/home/ec2-user/liftshift.pem
+liftshift.pem                                                                                                                               100% 1678    70.7KB/s   00:00
+❯ ssh -i "liftshift.pem" ec2-user@ec2-54-162-148-78.compute-1.amazonaws.com
+Last login: Sat Nov  9 22:42:22 2024 from 69.226.237.216
+   ,     #_
+   ~\_  ####_        Amazon Linux 2
+  ~~  \_#####\
+  ~~     \###|       AL2 End of Life is 2025-06-30.
+  ~~       \#/ ___
+   ~~       V~' '->
+    ~~~         /    A newer version of Amazon Linux is available!
+      ~~._.   _/
+         _/ _/       Amazon Linux 2023, GA and supported until 2028-03-15.
+       _/m/'           https://aws.amazon.com/linux/amazon-linux-2023/
+
+[ec2-user@ip-10-0-1-229 ~]$ ssh -i "liftshift.pem" ec2-user@ec2-18-234-157-136.compute-1.amazonaws.com
+The authenticity of host 'ec2-18-234-157-136.compute-1.amazonaws.com (10.0.2.171)' can't be established.
+ECDSA key fingerprint is SHA256:C+jOsJayV2x5G8dqWyKfpoS37YWa/f/aX6plvAO+flE.
+ECDSA key fingerprint is MD5:74:3c:eb:27:de:bb:89:ce:58:9c:a2:f7:90:06:25:71.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'ec2-18-234-157-136.compute-1.amazonaws.com,10.0.2.171' (ECDSA) to the list of known hosts.
+   ,     #_
+   ~\_  ####_        Amazon Linux 2
+  ~~  \_#####\
+  ~~     \###|       AL2 End of Life is 2025-06-30.
+  ~~       \#/ ___
+   ~~       V~' '->
+    ~~~         /    A newer version of Amazon Linux is available!
+      ~~._.   _/
+         _/ _/       Amazon Linux 2023, GA and supported until 2028-03-15.
+       _/m/'           https://aws.amazon.com/linux/amazon-linux-2023/
+
+[ec2-user@ip-10-0-2-171 ~]$ curl http://example.com
+<!doctype html>
+<html>
+<head>
+    <title>Example Domain</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type="text/css">
+    body {
+        background-color: #f0f0f2;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+    }
+    div {
+        width: 600px;
+        margin: 5em auto;
+        padding: 2em;
+        background-color: #fdfdff;
+        border-radius: 0.5em;
+        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);
+    }
+    a:link, a:visited {
+        color: #38488f;
+        text-decoration: none;
+    }
+    @media (max-width: 700px) {
+        div {
+            margin: 0 auto;
+            width: auto;
+        }
+    }
+    </style>
+</head>
+
+<body>
+<div>
+    <h1>Example Domain</h1>
+    <p>This domain is for use in illustrative examples in documents. You may use this
+    domain in literature without prior coordination or asking for permission.</p>
+    <p><a href="https://www.iana.org/domains/example">More information...</a></p>
+</div>
+</body>
+</html>
+[ec2-user@ip-10-0-2-171 ~]$ sudo yum update
+Loaded plugins: extras_suggestions, langpacks, priorities, update-motd
+amzn2-core                                                                                                                                             | 3.6 kB  00:00:00
+No packages marked for update
+[ec2-user@ip-10-0-2-171 ~]$ exit
+logout
+Connection to ec2-18-234-157-136.compute-1.amazonaws.com closed.
+[ec2-user@ip-10-0-1-229 ~]$ exit
+logout
+Connection to ec2-54-162-148-78.compute-1.amazonaws.com closed.
+```
+
+### Security groups
+Rather than allow wide open ssh, set to 0.0.0.0/0.  I did configure that to my personal ip.
+
+I created a config.env file which was gitignored and not checked into my repo.
+
+```bash
+MY_IP="<Personal Ip Address>"
+```
+This file is sourced like the variables from the variables.sh and MY_IP is available in the 
+set_up script.
 
 ### Final Thoughts:
 This was incredibly tedious.  This is the exact reason Terraform was created.

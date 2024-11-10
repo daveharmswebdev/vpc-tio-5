@@ -39,7 +39,7 @@ PUBLIC_SUBNET_ID=$(aws ec2 create-subnet \
     --availability-zone ${AWS_REGION}a \
     --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=PublicSubnet}]' \
     --query 'Subnet.SubnetId' \
-    --output text)
+    --output text --no-paginate)
 echo "Public Subnet created: ${PUBLIC_SUBNET_ID}"
 
 # Create Private Subnet
@@ -50,7 +50,7 @@ PRIVATE_SUBNET_ID=$(aws ec2 create-subnet \
     --availability-zone ${AWS_REGION}b \
     --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=PrivateSubnet}]' \
     --query 'Subnet.SubnetId' \
-    --output text)
+    --output text --no-paginate)
 echo "Private Subnet created: ${PRIVATE_SUBNET_ID}"
 
 # create internet gateway
@@ -58,7 +58,7 @@ echo "creating internet gateway"
 IGW_ID=$(aws ec2 create-internet-gateway \
   --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=${IGW_NAME}}]" \
   --query 'InternetGateway.InternetGatewayId' \
-  --output text)
+  --output text --no-paginate)
 echo "Internet Gateway created: ${IGW_ID}"
 
 # attach internet gateway to vpc
@@ -74,8 +74,17 @@ PUBLIC_RT_ID=$(aws ec2 create-route-table \
   --vpc-id "$VPC_ID" \
   --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=${PUBLIC_RT_NAME}}]" \
   --query 'RouteTable.RouteTableId' \
-  --output text)
+  --output text --no-paginate)
 echo "Public Route Table created: ${PUBLIC_RT_ID}"
+
+# create private route table
+echo "creating private route table"
+PRIVATE_RT_ID=$(aws ec2 create-route-table \
+  --vpc-id "$VPC_ID" \
+  --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=${PRIVATE_RT_NAME}}]" \
+  --query 'RouteTable.RouteTableId' \
+  --output text --no-paginate)
+echo "Private Route Table created: ${PRIVATE_RT_ID}"
 
 # add route to IGW in public route table
 echo "Creating route to internet gateway in public route table..."
@@ -91,9 +100,49 @@ PUBLIC_RT_ASSOC_ID=$(aws ec2 associate-route-table \
   --subnet-id "$PUBLIC_SUBNET_ID" \
   --route-table-id "$PUBLIC_RT_ID" \
   --query 'AssociationId' \
-  --output text)
+  --output text --no-paginate)
 echo "Public subnet ${PUBLIC_SUBNET_ID} associated with Public Route Table ${PUBLIC_RT_ID}: ${PUBLIC_RT_ASSOC_ID}"
 
+# allocate elastic ip for NAT gateway
+echo "allocating elastic ip for NAT gateway..."
+EIP_ALLOC_ID=$(aws ec2 allocate-address --query 'AllocationId' --output text --no-paginate)
+echo "Elastic ip allocated with Allocation Id: ${EIP_ALLOC_ID}"
+
+# Create NAT Gateway in Public Subnet
+echo "Creating NAT Gateway in public subnet..."
+NAT_GW_ID=$(aws ec2 create-nat-gateway \
+    --subnet-id "$PUBLIC_SUBNET_ID" \
+    --allocation-id "$EIP_ALLOC_ID" \
+    --query 'NatGateway.NatGatewayId' \
+    --output text --no-paginate)
+
+echo "Waiting for NAT Gateway to become available..."
+aws ec2 wait nat-gateway-available --nat-gateway-ids "$NAT_GW_ID"
+echo "NAT Gateway created: ${NAT_GW_ID}"
+
+# Add tags to NAT Gateway after creation
+echo "Tagging NAT Gateway..."
+aws ec2 create-tags \
+    --resources "$NAT_GW_ID" \
+    --tags Key=Name,Value="${NAT_GATEWAY_NAME}"
+echo "NAT Gateway tagged: ${NAT_GW_ID}"
+
+# Add Route to Private Route Table
+echo "Adding route to private route table to use NAT Gateway..."
+aws ec2 create-route \
+    --route-table-id "$PRIVATE_RT_ID" \
+    --destination-cidr-block "0.0.0.0/0" \
+    --nat-gateway-id "$NAT_GW_ID"
+echo "Route added to Private Route Table: ${PRIVATE_RT_ID} for NAT Gateway: ${NAT_GW_ID}"
+
+# Associate Private Subnet with Private Route Table
+echo "Associating private subnet with private route table..."
+PRIVATE_RT_ASSOC_ID=$(aws ec2 associate-route-table \
+  --subnet-id "$PRIVATE_SUBNET_ID" \
+  --route-table-id "$PRIVATE_RT_ID" \
+  --query 'AssociationId' \
+  --output text --no-paginate)
+echo "Private subnet ${PRIVATE_SUBNET_ID} associated with Private Route Table ${PRIVATE_RT_ID}: ${PRIVATE_RT_ASSOC_ID}"
 
 # create security group for public instances
 PUBLIC_SG_ID=$(aws ec2 create-security-group \
@@ -101,7 +150,7 @@ PUBLIC_SG_ID=$(aws ec2 create-security-group \
     --description "Security group for public instances" \
     --vpc-id "$VPC_ID" \
     --query 'GroupId' \
-    --output text)
+    --output text --no-paginate)
 echo "Public Security Group created: ${PUBLIC_SG_ID}"
 
 # Allow inbound SSH to public instances
@@ -134,7 +183,7 @@ PUBLIC_INSTANCE_ID=$(aws ec2 run-instances \
     --user-data file://public-user-data.sh \
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${PUBLIC_EC2_INSTANCE_NAME}}]" \
     --query 'Instances[0].InstanceId' \
-    --output text)
+    --output text --no-paginate)
 echo "Public EC2 instance launched: ${PUBLIC_INSTANCE_ID}"
 
 # create security group for private ec2 instance
@@ -144,7 +193,7 @@ PRIVATE_SG_ID=$(aws ec2 create-security-group \
     --description "Opens security groups for ssh and icmp only from the public subnet" \
     --vpc-id "$VPC_ID" \
     --query 'GroupId' \
-    --output text)
+    --output text --no-paginate)
 echo "Private Security Group created: ${PRIVATE_SG_ID}"
 
 # Allow SSH from the public subnet to private instances
@@ -177,5 +226,5 @@ PRIVATE_INSTANCE_ID=$(aws ec2 run-instances \
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${PRIVATE_EC2_INSTANCE_NAME}}]" \
     --associate-public-ip-address \
     --query 'Instances[0].InstanceId' \
-    --output text)
+    --output text --no-paginate)
 echo "Private EC2 instance launched: ${PRIVATE_INSTANCE_ID}"
